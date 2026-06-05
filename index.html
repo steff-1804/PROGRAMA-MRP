@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Programa MRP - Ejercicios de Clase</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Programa MRP</h1>
+      <p>Estrategia de planificación de requerimientos de materiales basada en ejercicios de clase.</p>
+    </div>
+    <button id="btnDemo">Cargar ejemplo de clase</button>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>1. Parámetros generales</h2>
+      <div class="grid-3">
+        <label>
+          Semanas a planificar
+          <input id="periodos" type="number" min="1" max="24" value="8"/>
+        </label>
+        <label>
+          Política de lote
+          <select id="politica">
+            <option value="L4L">Lote por lote</option>
+          </select>
+        </label>
+        <label>
+          Producto final
+          <input id="productoFinal" value="A"/>
+        </label>
+      </div>
+      <div class="actions">
+        <button id="btnConstruirDemanda">Actualizar semanas</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Demanda del producto final</h2>
+      <p class="hint">Ingrese las necesidades brutas del artículo final por semana. En el ejemplo de clase, A tiene demanda de 50 en la semana 8.</p>
+      <div id="demandaGrid" class="week-grid"></div>
+    </section>
+
+    <section class="card">
+      <h2>3. Datos de artículos</h2>
+      <p class="hint">Código, nivel inferior, inventario disponible y lead time. El stock de seguridad y recepciones programadas se dejan en cero por defecto.</p>
+      <div class="table-wrap">
+        <table id="tablaItems">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nivel inferior</th>
+              <th>Lead time</th>
+              <th>Inventario disponible</th>
+              <th>Stock seguridad</th>
+              <th>Recepciones programadas</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="actions">
+        <button id="btnAddItem">Agregar artículo</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>4. Estructura del producto / BOM</h2>
+      <p class="hint">Indique qué componentes necesita cada artículo padre y en qué cantidad.</p>
+      <div class="table-wrap">
+        <table id="tablaBom">
+          <thead>
+            <tr>
+              <th>Padre</th>
+              <th>Componente</th>
+              <th>Cantidad por unidad</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="actions">
+        <button id="btnAddBom">Agregar relación</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>5. Esquema del producto</h2>
+      <div id="arbol" class="tree"></div>
+    </section>
+
+    <section class="card">
+      <h2>6. Resultado MRP</h2>
+      <div class="actions">
+        <button id="btnCalcular" class="primary">Calcular MRP</button>
+        <button id="btnExportar">Exportar a Excel</button>
+        <button id="btnLimpiar">Limpiar resultados</button>
+      </div>
+      <div id="resultado"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
