@@ -1,111 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Programa MRP - Ejercicios de Clase</title>
+  <title>MRP Reporte Ejecutivo</title>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <h1>Programa MRP</h1>
-      <p>Estrategia de planificación de requerimientos de materiales basada en ejercicios de clase.</p>
-    </div>
-    <button id="btnDemo">Cargar ejemplo de clase</button>
+  <header class="app-header">
+    <div class="brand"><div class="logo">MRP</div><div><h1>Planificador MRP</h1><p>Herramienta educativa con árbol BOM, lote por lote y EOQ.</p></div></div>
+    <div class="header-actions"><button id="btnDemo" class="btn light">Cargar ejemplo</button><button id="btnPrintTop" class="btn light">Imprimir reporte</button></div>
   </header>
-
-  <main class="container">
-    <section class="card">
-      <h2>1. Parámetros generales</h2>
-      <div class="grid-3">
-        <label>
-          Semanas a planificar
-          <input id="periodos" type="number" min="1" max="24" value="8"/>
-        </label>
-        <label>
-          Política de lote
-          <select id="politica">
-            <option value="L4L">Lote por lote</option>
-          </select>
-        </label>
-        <label>
-          Producto final
-          <input id="productoFinal" value="A"/>
-        </label>
+  <main class="layout">
+    <nav class="steps">
+      <button class="step active" data-view="datos">1. Datos</button><button class="step" data-view="arbol">2. Árbol BOM</button><button class="step" data-view="demanda">3. Demanda</button><button class="step" data-view="resultado">4. Resultado</button><button class="step" data-view="reporte">5. Reporte</button>
+    </nav>
+    <section id="view-datos" class="view active">
+      <div class="card"><h2>Datos generales</h2><div class="grid-4">
+        <label>Nombre del ejercicio<input id="nombreEjercicio" value="Ejercicio MRP - Producto A"></label>
+        <label>Producto final<input id="productoFinal" value="A"></label>
+        <label>Semanas<input id="periodos" type="number" min="1" max="24" value="8"></label>
+        <label>Política<select id="politica"><option value="L4L">Lote por lote</option><option value="EOQ">EOQ - Lote económico</option></select></label>
       </div>
-      <div class="actions">
-        <button id="btnConstruirDemanda">Actualizar semanas</button>
-      </div>
+      <div id="eoqBox" class="eoq-box hidden"><h3>Parámetros EOQ</h3><p class="hint">EOQ necesita demanda anual, costo de ordenar y costo anual de mantener inventario.</p><div class="grid-3">
+        <label>Demanda anual estimada<input id="eoqD" type="number" min="1" value="1200"></label><label>Costo por orden<input id="eoqS" type="number" min="0.01" step="0.01" value="25"></label><label>Costo mantener unidad/año<input id="eoqH" type="number" min="0.01" step="0.01" value="5"></label>
+      </div><div class="eoq-result" id="eoqResult">EOQ calculado: -</div></div></div>
+      <div class="card"><h2>Artículos</h2><p class="hint">Registra inventario, lead time y stock de seguridad.</p><div class="table-wrap"><table id="tablaItems" class="input-table"><thead><tr><th>Código</th><th>Nivel</th><th>Lead time</th><th>Inventario</th><th>Stock seguridad</th><th>Recepción programada</th><th>Acción</th></tr></thead><tbody></tbody></table></div><div class="actions"><button id="btnAddItem" class="btn">Agregar artículo</button></div></div>
     </section>
-
-    <section class="card">
-      <h2>2. Demanda del producto final</h2>
-      <p class="hint">Ingrese las necesidades brutas del artículo final por semana. En el ejemplo de clase, A tiene demanda de 50 en la semana 8.</p>
-      <div id="demandaGrid" class="week-grid"></div>
+    <section id="view-arbol" class="view">
+      <div class="card"><h2>Árbol de producto editable</h2><p class="hint">Cada caja muestra el artículo y la cantidad requerida por unidad del padre.</p><div id="treeCanvas" class="tree-canvas"></div></div>
+      <div class="card"><h2>Relaciones BOM</h2><div class="table-wrap"><table id="tablaBom" class="input-table"><thead><tr><th>Padre</th><th>Componente</th><th>Cantidad</th><th>Acción</th></tr></thead><tbody></tbody></table></div><div class="actions"><button id="btnAddBom" class="btn">Agregar componente</button></div></div>
     </section>
-
-    <section class="card">
-      <h2>3. Datos de artículos</h2>
-      <p class="hint">Código, nivel inferior, inventario disponible y lead time. El stock de seguridad y recepciones programadas se dejan en cero por defecto.</p>
-      <div class="table-wrap">
-        <table id="tablaItems">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nivel inferior</th>
-              <th>Lead time</th>
-              <th>Inventario disponible</th>
-              <th>Stock seguridad</th>
-              <th>Recepciones programadas</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div class="actions">
-        <button id="btnAddItem">Agregar artículo</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>4. Estructura del producto / BOM</h2>
-      <p class="hint">Indique qué componentes necesita cada artículo padre y en qué cantidad.</p>
-      <div class="table-wrap">
-        <table id="tablaBom">
-          <thead>
-            <tr>
-              <th>Padre</th>
-              <th>Componente</th>
-              <th>Cantidad por unidad</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div class="actions">
-        <button id="btnAddBom">Agregar relación</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>5. Esquema del producto</h2>
-      <div id="arbol" class="tree"></div>
-    </section>
-
-    <section class="card">
-      <h2>6. Resultado MRP</h2>
-      <div class="actions">
-        <button id="btnCalcular" class="primary">Calcular MRP</button>
-        <button id="btnExportar">Exportar a Excel</button>
-        <button id="btnLimpiar">Limpiar resultados</button>
-      </div>
-      <div id="resultado"></div>
-    </section>
+    <section id="view-demanda" class="view"><div class="card"><h2>Demanda por semana</h2><p class="hint">Ingrese la demanda independiente del producto final.</p><div id="demandaGrid" class="week-grid"></div><div class="actions"><button id="btnActualizarSemanas" class="btn">Actualizar semanas</button></div></div></section>
+    <section id="view-resultado" class="view"><div class="card"><div class="section-head"><div><h2>Resultado MRP</h2><p class="hint">Calcula el MRP y revisa el reporte ejecutivo.</p></div><button id="btnCalcular" class="btn primary">Calcular MRP</button></div><div id="summaryCards" class="summary-cards"></div><div id="alerts" class="alerts"></div><div id="mrpTables"></div></div></section>
+    <section id="view-reporte" class="view"><div class="card no-print"><h2>Reporte ejecutivo</h2><p class="hint">Reporte listo para imprimir o guardar como PDF.</p><div class="actions"><button id="btnGenerarReporte" class="btn primary">Generar reporte</button><button id="btnPrint" class="btn">Imprimir / Guardar PDF</button></div></div><article id="reportPage" class="report-page"></article></section>
   </main>
-
   <script src="app.js"></script>
 </body>
 </html>
