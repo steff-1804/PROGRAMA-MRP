@@ -33,22 +33,40 @@
     <section id="view-datos" class="view active">
       <div class="card">
         <h2>Datos generales</h2>
+
         <div class="grid-4">
           <label>Nombre del ejercicio
             <input id="nombreEjercicio" value="Ejercicio MRP - Producto A">
           </label>
+
           <label>Producto final
             <input id="productoFinal" value="A">
           </label>
+
           <label>Semanas
             <input id="periodos" type="number" min="1" max="24" value="8">
           </label>
+
           <label>Política
             <select id="politica">
               <option value="L4L">Lote por lote</option>
               <option value="EOQ">EOQ - Lote económico</option>
             </select>
           </label>
+        </div>
+
+        <div class="quick-config">
+          <div>
+            <h3>Configuración rápida de artículos</h3>
+            <p class="hint">Indica cuántos artículos tendrá el ejercicio. El sistema crea las tarjetas automáticamente.</p>
+          </div>
+
+          <div class="quick-controls">
+            <label>Cantidad de artículos
+              <input id="cantidadArticulos" type="number" min="1" max="30" value="7">
+            </label>
+            <button id="btnGenerarArticulos" class="btn primary">Generar tarjetas</button>
+          </div>
         </div>
 
         <div id="eoqBox" class="eoq-box hidden">
@@ -73,7 +91,7 @@
         <div class="section-head">
           <div>
             <h2>Artículos</h2>
-            <p class="hint">Ingreso tipo tarjetas, más cómodo que una tabla y mejor para celulares.</p>
+            <p class="hint">Cada tarjeta representa un artículo. El diseño evita que los campos se monten, incluso en celular.</p>
           </div>
           <button id="btnAddItem" class="btn primary">Agregar artículo</button>
         </div>
@@ -92,7 +110,7 @@
         <div class="section-head">
           <div>
             <h2>Componentes del producto</h2>
-            <p class="hint">También se ingresa como tarjetas para evitar tablas extensas.</p>
+            <p class="hint">Define las relaciones padre-componente del árbol BOM.</p>
           </div>
           <button id="btnAddBom" class="btn primary">Agregar componente</button>
         </div>
@@ -116,7 +134,7 @@
         <div class="section-head">
           <div>
             <h2>Resultado MRP</h2>
-            <p class="hint">Aquí se conservan tablas porque el MRP sí necesita lectura por semana.</p>
+            <p class="hint">Aquí se mantienen tablas porque el MRP se analiza por semana.</p>
           </div>
           <button id="btnCalcular" class="btn primary">Calcular MRP</button>
         </div>
@@ -129,7 +147,7 @@
     <section id="view-reporte" class="view">
       <div class="card no-print">
         <h2>Reporte ejecutivo</h2>
-        <p class="hint">Reporte tipo trabajo: solo muestra lo necesario para tomar decisiones.</p>
+        <p class="hint">Reporte tipo trabajo: muestra solo lo necesario para tomar decisiones.</p>
         <div class="actions">
           <button id="btnGenerarReporte" class="btn primary">Generar reporte</button>
           <button id="btnPrint" class="btn">Imprimir / Guardar PDF</button>

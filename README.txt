@@ -1,15 +1,14 @@
-PROGRAMA MRP - VERSIÓN CON TARJETAS
+PROGRAMA MRP - VERSIÓN TARJETAS V2
 
-Mejora aplicada:
-- La sección de artículos ya no se ve como tabla.
-- Los artículos se ingresan como tarjetas editables.
-- La sección BOM también usa tarjetas.
-- La salida MRP conserva tablas porque el análisis semanal requiere estructura tabular.
-- Responsive para celular.
-- Reporte ejecutivo para imprimir o guardar como PDF.
+Cambios:
+- Se agregó campo "Cantidad de artículos".
+- El sistema genera automáticamente las tarjetas según la cantidad indicada.
+- Se corrigió el diseño para que las tarjetas no se monten.
+- Cada tarjeta usa campos en una sola columna para evitar desbordamientos.
+- Funciona mejor en celular.
 
 Render:
 - Static Site
-- Root Directory: vacío si index.html está en raíz
+- Root Directory: vacío
 - Build Command: vacío
 - Publish Directory: .
