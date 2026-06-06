@@ -17,7 +17,6 @@ function semanas(){
 function showView(view){
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
-
   $("view-" + view).classList.add("active");
   document.querySelector('.step[data-view="' + view + '"]').classList.add("active");
 
@@ -30,7 +29,6 @@ function calcularEOQ(){
   const D = Math.max(1, val($("eoqD").value));
   const S = Math.max(0.01, val($("eoqS").value));
   const H = Math.max(0.01, val($("eoqH").value));
-
   return Math.ceil(Math.sqrt((2 * D * S) / H));
 }
 
@@ -80,6 +78,22 @@ function generarArticulosDesdeCantidad(){
   renderAll();
 }
 
+function cargarBomEjemplo(){
+  bom = [
+    {padre:"A", comp:"B", qty:2},
+    {padre:"A", comp:"C", qty:3},
+    {padre:"B", comp:"D", qty:2},
+    {padre:"B", comp:"E", qty:2},
+    {padre:"C", comp:"E", qty:2},
+    {padre:"C", comp:"F", qty:2},
+    {padre:"F", comp:"G", qty:1},
+    {padre:"F", comp:"D", qty:2}
+  ];
+
+  renderBomCards();
+  renderTree();
+}
+
 function cargarDemo(){
   $("nombreEjercicio").value = "Ejercicio MRP - Producto A";
   $("productoFinal").value = "A";
@@ -100,16 +114,7 @@ function cargarDemo(){
     {codigo:"G", nivel:2, lt:2, inv:0, ss:0, rp:0}
   ];
 
-  bom = [
-    {padre:"A", comp:"B", qty:2},
-    {padre:"A", comp:"C", qty:3},
-    {padre:"B", comp:"D", qty:2},
-    {padre:"B", comp:"E", qty:2},
-    {padre:"C", comp:"E", qty:2},
-    {padre:"C", comp:"F", qty:2},
-    {padre:"F", comp:"G", qty:1},
-    {padre:"F", comp:"D", qty:2}
-  ];
+  cargarBomEjemplo();
 
   demanda = {};
   for(let t = 1; t <= semanas(); t++){
@@ -133,6 +138,17 @@ function renderAll(){
   renderBomCards();
   renderDemanda();
   renderTree();
+}
+
+function opcionesArticulos(valorSeleccionado){
+  let html = `<option value="">Seleccione...</option>`;
+
+  items.forEach(it => {
+    const selected = it.codigo === valorSeleccionado ? "selected" : "";
+    html += `<option value="${it.codigo}" ${selected}>${it.codigo}</option>`;
+  });
+
+  return html;
 }
 
 function renderItemsCards(){
@@ -189,11 +205,19 @@ function renderItemsCards(){
     input.addEventListener("change", e => {
       const i = Number(e.target.dataset.i);
       const k = e.target.dataset.k;
+      const oldCode = items[i].codigo;
 
       items[i][k] = k === "codigo" ? e.target.value.trim().toUpperCase() : val(e.target.value);
 
-      renderItemsCards();
-      renderTree();
+      if(k === "codigo"){
+        const newCode = items[i].codigo;
+        bom.forEach(r => {
+          if(r.padre === oldCode) r.padre = newCode;
+          if(r.comp === oldCode) r.comp = newCode;
+        });
+      }
+
+      renderAll();
     });
   });
 }
@@ -209,8 +233,8 @@ function renderBomCards(){
     card.innerHTML = `
       <div class="bom-card-head">
         <div>
-          <div class="item-title">Relación BOM</div>
-          <div class="item-sub">Componente requerido por unidad del padre</div>
+          <div class="item-title">Relación de estructura</div>
+          <div class="item-sub">Indica qué componente necesita cada producto</div>
         </div>
         <button class="btn danger" onclick="deleteBom(${i})">Eliminar</button>
       </div>
@@ -223,15 +247,19 @@ function renderBomCards(){
       </div>
 
       <div class="form-grid">
-        <label>Padre
-          <input value="${r.padre}" data-i="${i}" data-k="padre">
+        <label>Producto padre
+          <select data-i="${i}" data-k="padre">
+            ${opcionesArticulos(r.padre)}
+          </select>
         </label>
 
         <label>Componente
-          <input value="${r.comp}" data-i="${i}" data-k="comp">
+          <select data-i="${i}" data-k="comp">
+            ${opcionesArticulos(r.comp)}
+          </select>
         </label>
 
-        <label>Cantidad
+        <label>Cantidad requerida
           <input type="number" min="1" value="${r.qty}" data-i="${i}" data-k="qty">
         </label>
       </div>
@@ -240,7 +268,7 @@ function renderBomCards(){
     box.appendChild(card);
   });
 
-  box.querySelectorAll("input").forEach(input => {
+  box.querySelectorAll("select, input").forEach(input => {
     input.addEventListener("change", e => {
       const i = Number(e.target.dataset.i);
       const k = e.target.dataset.k;
@@ -294,7 +322,7 @@ function syncFromCards(){
     }
   });
 
-  document.querySelectorAll("#bomCards input").forEach(inp => {
+  document.querySelectorAll("#bomCards select, #bomCards input").forEach(inp => {
     const i = Number(inp.dataset.i);
     const k = inp.dataset.k;
 
@@ -312,7 +340,7 @@ function addItem(){
   const nuevo = crearArticuloPorNumero(items.length);
   items.push(nuevo);
   $("cantidadArticulos").value = items.length;
-  renderItemsCards();
+  renderAll();
 }
 
 function deleteItem(i){
@@ -327,7 +355,9 @@ function deleteItem(i){
 }
 
 function addBom(){
-  bom.push({padre:"", comp:"", qty:1});
+  const padre = $("productoFinal").value.trim().toUpperCase() || (items[0] ? items[0].codigo : "");
+  const comp = items.find(x => x.codigo !== padre)?.codigo || "";
+  bom.push({padre, comp, qty:1});
   renderBomCards();
   renderTree();
 }
@@ -342,24 +372,34 @@ function renderTree(){
   const root = $("productoFinal").value.trim().toUpperCase() || "A";
   const canvas = $("treeCanvas");
 
+  const itemCodes = new Set(items.map(x => x.codigo));
+  const validBom = bom.filter(r => itemCodes.has(r.padre) && itemCodes.has(r.comp) && r.padre && r.comp);
+
   function children(code){
-    return bom
+    return validBom
       .map((r, idx) => ({...r, idx}))
       .filter(r => r.padre === code);
   }
 
-  function build(code, edge = null){
+  function build(code, edge = null, visited = new Set()){
+    if(visited.has(code)){
+      return `<li><div class="node">${code}<small>Ciclo detectado</small></div></li>`;
+    }
+
+    const nextVisited = new Set(visited);
+    nextVisited.add(code);
+
     const childs = children(code);
 
     const info = edge
-      ? `<small>Unid.: <input class="qty-edit" type="number" min="1" value="${edge.qty}" data-bom="${edge.idx}"></small>`
+      ? `<small>Unid.: <input class="qty-edit" type="number" min="1" value="${edge.qty}" data-padre="${edge.padre}" data-comp="${edge.comp}"></small>`
       : `<small>Producto final</small>`;
 
     let html = `<li><div class="node">${code}${info}</div>`;
 
     if(childs.length){
       html += "<ul>";
-      childs.forEach(ch => html += build(ch.comp, ch));
+      childs.forEach(ch => html += build(ch.comp, ch, nextVisited));
       html += "</ul>";
     }
 
@@ -371,9 +411,14 @@ function renderTree(){
 
   canvas.querySelectorAll(".qty-edit").forEach(inp => {
     inp.addEventListener("change", e => {
-      const idx = Number(e.target.dataset.bom);
-      bom[idx].qty = Math.max(1, val(e.target.value));
-      renderBomCards();
+      const padre = e.target.dataset.padre;
+      const comp = e.target.dataset.comp;
+      const rel = bom.find(r => r.padre === padre && r.comp === comp);
+
+      if(rel){
+        rel.qty = Math.max(1, val(e.target.value));
+        renderBomCards();
+      }
     });
   });
 }
@@ -485,11 +530,9 @@ function calcularMRP(){
 
 function arrTotal(arr){
   let s = 0;
-
   for(let t = 1; t <= semanas(); t++){
     s += val(arr[t]);
   }
-
   return s;
 }
 
@@ -499,7 +542,6 @@ function firstWeek(arr){
       return t;
     }
   }
-
   return "-";
 }
 
@@ -754,6 +796,7 @@ $("btnAddBom").addEventListener("click", addBom);
 $("btnActualizarSemanas").addEventListener("click", renderDemanda);
 $("btnCalcular").addEventListener("click", calcularMRP);
 $("btnGenerarArticulos").addEventListener("click", generarArticulosDesdeCantidad);
+$("btnBomDemo").addEventListener("click", cargarBomEjemplo);
 
 $("politica").addEventListener("change", updatePolicyUI);
 $("eoqD").addEventListener("input", updatePolicyUI);

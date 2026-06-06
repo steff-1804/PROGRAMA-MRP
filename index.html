@@ -12,7 +12,7 @@
       <div class="logo">MRP</div>
       <div>
         <h1>Planificador MRP</h1>
-        <p>Árbol BOM, lote por lote, EOQ y reporte ejecutivo.</p>
+        <p>Árbol de producto, lote por lote, EOQ y reporte ejecutivo.</p>
       </div>
     </div>
     <div class="header-actions">
@@ -24,7 +24,7 @@
   <main class="layout">
     <nav class="steps">
       <button class="step active" data-view="datos">1. Datos</button>
-      <button class="step" data-view="arbol">2. Árbol BOM</button>
+      <button class="step" data-view="arbol">2. Árbol</button>
       <button class="step" data-view="demanda">3. Demanda</button>
       <button class="step" data-view="resultado">4. Resultado</button>
       <button class="step" data-view="reporte">5. Reporte</button>
@@ -58,7 +58,7 @@
         <div class="quick-config">
           <div>
             <h3>Configuración rápida de artículos</h3>
-            <p class="hint">Indica cuántos artículos tendrá el ejercicio. El sistema crea las tarjetas automáticamente.</p>
+            <p class="hint">Indica cuántos artículos tendrá el ejercicio. El sistema crea las tarjetas A, B, C...</p>
           </div>
 
           <div class="quick-controls">
@@ -91,7 +91,7 @@
         <div class="section-head">
           <div>
             <h2>Artículos</h2>
-            <p class="hint">Cada tarjeta representa un artículo. El diseño evita que los campos se monten, incluso en celular.</p>
+            <p class="hint">Cada tarjeta representa un artículo. Aquí se ingresa inventario, lead time y stock de seguridad.</p>
           </div>
           <button id="btnAddItem" class="btn primary">Agregar artículo</button>
         </div>
@@ -101,18 +101,24 @@
 
     <section id="view-arbol" class="view">
       <div class="card">
-        <h2>Árbol de producto editable</h2>
-        <p class="hint">Cada caja muestra el artículo y la cantidad requerida por unidad del padre.</p>
+        <h2>Árbol de producto</h2>
+        <p class="hint">
+          El árbol se forma con las relaciones padre-componente. Ejemplo: si A necesita 2 unidades de B,
+          entonces se registra: Padre A → Componente B → Cantidad 2.
+        </p>
         <div id="treeCanvas" class="tree-canvas"></div>
       </div>
 
       <div class="card">
         <div class="section-head">
           <div>
-            <h2>Componentes del producto</h2>
-            <p class="hint">Define las relaciones padre-componente del árbol BOM.</p>
+            <h2>Estructura del producto</h2>
+            <p class="hint">Usa las listas desplegables para evitar errores. No escribas 1, 2 o 3 como padre/componente; usa A, B, C...</p>
           </div>
-          <button id="btnAddBom" class="btn primary">Agregar componente</button>
+          <div class="actions no-margin">
+            <button id="btnAddBom" class="btn primary">Agregar relación</button>
+            <button id="btnBomDemo" class="btn">Usar estructura ejemplo</button>
+          </div>
         </div>
         <div id="bomCards" class="bom-grid"></div>
       </div>
@@ -121,7 +127,7 @@
     <section id="view-demanda" class="view">
       <div class="card">
         <h2>Demanda por semana</h2>
-        <p class="hint">Ingrese la demanda independiente del producto final. Los componentes se calculan automáticamente desde el árbol BOM.</p>
+        <p class="hint">Ingrese la demanda independiente del producto final. Los componentes se calculan automáticamente desde el árbol.</p>
         <div id="demandaGrid" class="week-grid"></div>
         <div class="actions">
           <button id="btnActualizarSemanas" class="btn">Actualizar semanas</button>

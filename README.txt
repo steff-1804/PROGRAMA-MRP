@@ -1,14 +1,8 @@
-PROGRAMA MRP - VERSIÓN TARJETAS V2
+PROGRAMA MRP - VERSIÓN BOM CON SELECTORES
 
 Cambios:
-- Se agregó campo "Cantidad de artículos".
-- El sistema genera automáticamente las tarjetas según la cantidad indicada.
-- Se corrigió el diseño para que las tarjetas no se monten.
-- Cada tarjeta usa campos en una sola columna para evitar desbordamientos.
-- Funciona mejor en celular.
-
-Render:
-- Static Site
-- Root Directory: vacío
-- Build Command: vacío
-- Publish Directory: .
+- La "Relación BOM" ahora se llama "Estructura del producto".
+- Padre y componente se escogen con listas desplegables.
+- Esto evita escribir 1 y 2 por error.
+- El árbol se forma correctamente cuando las relaciones son A -> B, A -> C, etc.
+- Se agregó botón "Usar estructura ejemplo".
