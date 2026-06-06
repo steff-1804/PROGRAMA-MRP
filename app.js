@@ -1,1 +1,376 @@
-let items=[], bom=[], demanda={}, ultimoResultado=null;const $=id=>document.getElementById(id);const val=x=>{const n=Number(x);return isNaN(n)?0:n};function semanas(){return Math.max(1,Math.min(24,val($('periodos').value||8)))}function showView(view){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));$(`view-${view}`).classList.add('active');document.querySelector(`.step[data-view="${view}"]`).classList.add('active');if(view==='reporte')generarReporte()}function updatePolicyUI(){const isEOQ=$('politica').value==='EOQ';$('eoqBox').classList.toggle('hidden',!isEOQ);actualizarEOQ()}function calcularEOQ(){const D=Math.max(1,val($('eoqD').value));const S=Math.max(.01,val($('eoqS').value));const H=Math.max(.01,val($('eoqH').value));return Math.ceil(Math.sqrt((2*D*S)/H))}function actualizarEOQ(){if($('politica').value==='EOQ')$('eoqResult').textContent=`EOQ calculado: ${calcularEOQ()} unidades por orden`}function cargarDemo(){$('nombreEjercicio').value='Ejercicio MRP - Producto A';$('productoFinal').value='A';$('periodos').value=8;$('politica').value='L4L';$('eoqD').value=1200;$('eoqS').value=25;$('eoqH').value=5;items=[{codigo:'A',nivel:0,lt:1,inv:10,ss:0,rp:0},{codigo:'B',nivel:1,lt:2,inv:15,ss:0,rp:0},{codigo:'C',nivel:1,lt:1,inv:20,ss:0,rp:0},{codigo:'D',nivel:2,lt:1,inv:10,ss:0,rp:0},{codigo:'E',nivel:2,lt:2,inv:5,ss:0,rp:0},{codigo:'F',nivel:2,lt:3,inv:10,ss:0,rp:0},{codigo:'G',nivel:2,lt:2,inv:0,ss:0,rp:0}];bom=[{padre:'A',comp:'B',qty:2},{padre:'A',comp:'C',qty:3},{padre:'B',comp:'D',qty:2},{padre:'B',comp:'E',qty:2},{padre:'C',comp:'E',qty:2},{padre:'C',comp:'F',qty:2},{padre:'F',comp:'G',qty:1},{padre:'F',comp:'D',qty:2}];demanda={};for(let t=1;t<=semanas();t++)demanda[t]=0;demanda[8]=50;renderAll();updatePolicyUI();ultimoResultado=null;$('mrpTables').innerHTML='';$('summaryCards').innerHTML='';$('alerts').innerHTML='';$('reportPage').innerHTML=''}function renderAll(){renderItems();renderBom();renderDemanda();renderTree()}function renderItems(){const tb=document.querySelector('#tablaItems tbody');tb.innerHTML='';items.forEach((it,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td><input value="${it.codigo}" data-i="${i}" data-k="codigo"></td><td><input type="number" value="${it.nivel}" data-i="${i}" data-k="nivel"></td><td><input type="number" value="${it.lt}" data-i="${i}" data-k="lt"></td><td><input type="number" value="${it.inv}" data-i="${i}" data-k="inv"></td><td><input type="number" value="${it.ss}" data-i="${i}" data-k="ss"></td><td><input type="number" value="${it.rp}" data-i="${i}" data-k="rp"></td><td><button class="btn" onclick="deleteItem(${i})">Eliminar</button></td>`;tb.appendChild(tr)});tb.querySelectorAll('input').forEach(input=>{input.addEventListener('input',e=>{const i=Number(e.target.dataset.i),k=e.target.dataset.k;items[i][k]=k==='codigo'?e.target.value.trim().toUpperCase():val(e.target.value);renderTree()})})}function renderBom(){const tb=document.querySelector('#tablaBom tbody');tb.innerHTML='';bom.forEach((r,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td><input value="${r.padre}" data-i="${i}" data-k="padre"></td><td><input value="${r.comp}" data-i="${i}" data-k="comp"></td><td><input type="number" min="1" value="${r.qty}" data-i="${i}" data-k="qty"></td><td><button class="btn" onclick="deleteBom(${i})">Eliminar</button></td>`;tb.appendChild(tr)});tb.querySelectorAll('input').forEach(input=>{input.addEventListener('input',e=>{const i=Number(e.target.dataset.i),k=e.target.dataset.k;bom[i][k]=k==='qty'?Math.max(1,val(e.target.value)):e.target.value.trim().toUpperCase();renderTree()})})}function renderDemanda(){const p=semanas(),nueva={};for(let t=1;t<=p;t++)nueva[t]=demanda[t]||0;demanda=nueva;const box=$('demandaGrid');box.innerHTML='';for(let t=1;t<=p;t++){const div=document.createElement('div');div.className='week-box';div.innerHTML=`<label>Semana ${t}<input type="number" min="0" value="${demanda[t]}" data-week="${t}"></label>`;div.querySelector('input').addEventListener('input',e=>demanda[e.target.dataset.week]=val(e.target.value));box.appendChild(div)}}function syncTables(){document.querySelectorAll('#tablaItems tbody input').forEach(inp=>{const i=Number(inp.dataset.i),k=inp.dataset.k;if(items[i])items[i][k]=k==='codigo'?inp.value.trim().toUpperCase():val(inp.value)});document.querySelectorAll('#tablaBom tbody input').forEach(inp=>{const i=Number(inp.dataset.i),k=inp.dataset.k;if(bom[i])bom[i][k]=k==='qty'?Math.max(1,val(inp.value)):inp.value.trim().toUpperCase()});document.querySelectorAll('#demandaGrid input').forEach(inp=>demanda[inp.dataset.week]=val(inp.value))}function addItem(){items.push({codigo:'',nivel:0,lt:1,inv:0,ss:0,rp:0});renderItems()}function deleteItem(i){const cod=items[i].codigo;items.splice(i,1);bom=bom.filter(r=>r.padre!==cod&&r.comp!==cod);renderAll()}function addBom(){bom.push({padre:'',comp:'',qty:1});renderBom();renderTree()}function deleteBom(i){bom.splice(i,1);renderBom();renderTree()}function renderTree(){syncBomOnly();const root=$('productoFinal').value.trim().toUpperCase()||'A',canvas=$('treeCanvas');function children(code){return bom.map((r,idx)=>({...r,idx})).filter(r=>r.padre===code)}function build(code,edge=null){const childs=children(code),info=edge?`<small>Unid.: <input class="qty-edit" type="number" min="1" value="${edge.qty}" data-bom="${edge.idx}"></small>`:`<small>Producto final</small>`;let html=`<li><div class="node">${code}${info}</div>`;if(childs.length){html+='<ul>';childs.forEach(ch=>html+=build(ch.comp,ch));html+='</ul>'}html+='</li>';return html}canvas.innerHTML=`<ul>${build(root)}</ul>`;canvas.querySelectorAll('.qty-edit').forEach(inp=>{inp.addEventListener('input',e=>{const idx=Number(e.target.dataset.bom);bom[idx].qty=Math.max(1,val(e.target.value));renderBom()})})}function syncBomOnly(){document.querySelectorAll('#tablaBom tbody input').forEach(inp=>{const i=Number(inp.dataset.i),k=inp.dataset.k;if(bom[i])bom[i][k]=k==='qty'?Math.max(1,val(inp.value)):inp.value.trim().toUpperCase()})}function plannedReceiptQty(net){if(net<=0)return 0;if($('politica').value==='L4L')return net;const eoq=calcularEOQ();return Math.ceil(net/eoq)*eoq}function calcItem(item,gross){const p=semanas(),recProg=Array(p+1).fill(0),disp=Array(p+1).fill(0),netas=Array(p+1).fill(0),recPlan=Array(p+1).fill(0),lanzPlan=Array(p+1).fill(0);for(let t=1;t<=p;t++)recProg[t]=val(item.rp);let inv=val(item.inv);for(let t=1;t<=p;t++){const before=inv+recProg[t];if(before-gross[t]<val(item.ss)){netas[t]=val(item.ss)+gross[t]-before;recPlan[t]=plannedReceiptQty(netas[t])}inv=inv+recProg[t]+recPlan[t]-gross[t];disp[t]=inv;const launch=t-val(item.lt);if(recPlan[t]>0&&launch>=1)lanzPlan[launch]+=recPlan[t]}return{gross,recProg,disp,netas,recPlan,lanzPlan}}function calcularMRP(){syncTables();const root=$('productoFinal').value.trim().toUpperCase(),itemMap=Object.fromEntries(items.map(i=>[i.codigo,i]));if(!root||!itemMap[root]){alert('El producto final no existe en la tabla de artículos.');return}const p=semanas(),grossMap={};items.forEach(i=>grossMap[i.codigo]=Array(p+1).fill(0));for(let t=1;t<=p;t++)grossMap[root][t]=val(demanda[t]);const order=[...items].sort((a,b)=>val(a.nivel)-val(b.nivel)).map(i=>i.codigo),result={};for(const code of order){if(!grossMap[code])grossMap[code]=Array(p+1).fill(0);result[code]=calcItem(itemMap[code],grossMap[code]);bom.filter(r=>r.padre===code).forEach(r=>{if(!grossMap[r.comp])grossMap[r.comp]=Array(p+1).fill(0);for(let t=1;t<=p;t++)grossMap[r.comp][t]+=result[code].lanzPlan[t]*val(r.qty)})}ultimoResultado={result,order,itemMap,policy:$('politica').value,eoq:$('politica').value==='EOQ'?calcularEOQ():null};renderMRP();generarReporte()}function arrTotal(arr){let s=0;for(let t=1;t<=semanas();t++)s+=val(arr[t]);return s}function firstWeek(arr){for(let t=1;t<=semanas();t++)if(val(arr[t])>0)return t;return '-'}function renderMRP(){const data=ultimoResultado;if(!data)return;const totalNet=data.order.reduce((s,c)=>s+arrTotal(data.result[c].netas),0),totalOrders=data.order.reduce((s,c)=>s+arrTotal(data.result[c].recPlan),0),totalLaunch=data.order.reduce((s,c)=>s+arrTotal(data.result[c].lanzPlan),0),itemsWithOrders=data.order.filter(c=>arrTotal(data.result[c].recPlan)>0).length;$('summaryCards').innerHTML=`<div class="metric"><span>Necesidad neta total</span><strong>${totalNet}</strong></div><div class="metric"><span>Recepción planificada total</span><strong>${totalOrders}</strong></div><div class="metric"><span>Lanzamientos planificados</span><strong>${totalLaunch}</strong></div><div class="metric"><span>Artículos con orden</span><strong>${itemsWithOrders}</strong></div>`;$('alerts').innerHTML=buildAlerts(data).map(a=>`<div class="alert ${a.type}">${a.text}</div>`).join('');let html='';data.order.forEach(code=>{const it=data.itemMap[code],r=data.result[code];html+=`<div class="mrp-card"><div class="mrp-title"><div>Artículo: ${code}</div><div>Nivel: ${it.nivel}</div><div>Lead time: ${it.lt}</div><div>Inv.: ${it.inv}</div><div>SS: ${it.ss}</div><div>Política: ${data.policy}${data.eoq?' / EOQ '+data.eoq:''}</div></div><div class="table-wrap"><table class="mrp-table"><thead><tr><th>Conceptos</th>${weekHeads()}</tr></thead><tbody>${row('NECESIDADES BRUTAS',r.gross)}${row('RECEPCIONES PROGRAMADAS',r.recProg)}${row('DISPONIBLE (INVENTARIOS)',r.disp)}${row('NECESIDADES NETAS',r.netas,true)}${row('RECEPCIONES DE ORDEN PLANIFICADO',r.recPlan)}${row('LANZAMIENTO DEL ORDEN PLANIFICADO',r.lanzPlan)}</tbody></table></div></div>`});$('mrpTables').innerHTML=html}function weekHeads(){return Array.from({length:semanas()},(_,i)=>`<th>S${i+1}</th>`).join('')}function row(name,arr,red=false){let html=`<tr><td class="${red?'red':''}">${name}</td>`;for(let t=1;t<=semanas();t++)html+=`<td class="${red?'red':''}">${arr[t]?arr[t]:''}</td>`;return html+'</tr>'}function buildAlerts(data){const alerts=[];data.order.forEach(code=>{const it=data.itemMap[code],r=data.result[code];for(let t=1;t<=semanas();t++)if(r.recPlan[t]>0&&(t-val(it.lt))<1)alerts.push({type:'bad',text:`${code}: se requiere recepción en semana ${t}, pero el lead time (${it.lt}) obliga a lanzar antes del horizonte planificado.`})});bom.forEach(rel=>{const count=bom.filter(x=>x.comp===rel.comp).length;if(count>1&&!alerts.some(a=>a.text.includes(`El componente ${rel.comp}`)))alerts.push({type:'',text:`El componente ${rel.comp} aparece en más de un padre. El sistema consolida sus necesidades brutas automáticamente.`})});if(alerts.length===0)alerts.push({type:'ok',text:'No se detectaron lanzamientos fuera del horizonte ni conflictos críticos en el BOM.'});return alerts}function generarReporte(){if(!ultimoResultado){$('reportPage').innerHTML='<div class="report-header"><div><h2>Reporte MRP</h2><p>Presiona “Calcular MRP” para generar el reporte.</p></div><div class="report-tag">Pendiente</div></div>';return}const data=ultimoResultado,root=$('productoFinal').value.trim().toUpperCase(),totalNet=data.order.reduce((s,c)=>s+arrTotal(data.result[c].netas),0),totalOrders=data.order.reduce((s,c)=>s+arrTotal(data.result[c].recPlan),0),firsts=data.order.map(c=>firstWeek(data.result[c].lanzPlan)).filter(x=>x!=='-'),firstLaunch=firsts.length?Math.min(...firsts):'-',policyName=data.policy==='L4L'?'Lote por lote':`EOQ (${data.eoq} unidades)`,today=new Date().toLocaleDateString('es-EC');const resumenRows=data.order.map(code=>{const r=data.result[code];return `<tr><td>${code}</td><td>${arrTotal(r.gross)}</td><td>${arrTotal(r.netas)}</td><td>${arrTotal(r.recPlan)}</td><td>${firstWeek(r.lanzPlan)}</td><td>${r.disp[semanas()]}</td></tr>`}).join('');const alerts=buildAlerts(data).slice(0,5).map(a=>`<li>${a.text}</li>`).join('');$('reportPage').innerHTML=`<div class="report-header"><div><h2>Reporte ejecutivo MRP</h2><p><strong>${$('nombreEjercicio').value}</strong></p><p>Fecha de emisión: ${today}</p></div><div class="report-tag">${policyName}</div></div><div class="report-grid"><div class="report-box"><span>Producto final</span><strong>${root}</strong></div><div class="report-box"><span>Horizonte</span><strong>${semanas()} semanas</strong></div><div class="report-box"><span>Necesidad neta total</span><strong>${totalNet}</strong></div><div class="report-box"><span>Recepción planificada total</span><strong>${totalOrders}</strong></div><div class="report-box"><span>Primera semana de lanzamiento</span><strong>${firstLaunch}</strong></div><div class="report-box"><span>Artículos evaluados</span><strong>${data.order.length}</strong></div></div><div class="report-section"><h3>Conclusión operativa</h3><p>Bajo la política <strong>${policyName}</strong>, el sistema determina los requerimientos para cubrir la demanda del producto <strong>${root}</strong>. Las órdenes deben revisarse especialmente en artículos con lead time mayor.</p></div><div class="report-section"><h3>Resumen por artículo</h3><table class="report-table"><thead><tr><th>Artículo</th><th>Nec. brutas</th><th>Nec. netas</th><th>Rec. planificadas</th><th>Primera orden</th><th>Inv. final</th></tr></thead><tbody>${resumenRows}</tbody></table></div><div class="report-section"><h3>Alertas y observaciones</h3><ul>${alerts}</ul></div><div class="report-section"><h3>Recomendación</h3><p>Validar inventarios físicos antes de liberar órdenes, confirmar lead times y revisar componentes compartidos para evitar duplicidad de pedidos.</p></div><div class="report-sign"><div class="sign-line">Elaborado por</div><div class="sign-line">Revisado por</div></div>`}function printReport(){generarReporte();showView('reporte');setTimeout(()=>window.print(),250)}document.querySelectorAll('.step').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));$('btnDemo').addEventListener('click',cargarDemo);$('btnPrintTop').addEventListener('click',printReport);$('btnPrint').addEventListener('click',printReport);$('btnGenerarReporte').addEventListener('click',generarReporte);$('btnAddItem').addEventListener('click',addItem);$('btnAddBom').addEventListener('click',addBom);$('btnActualizarSemanas').addEventListener('click',renderDemanda);$('btnCalcular').addEventListener('click',calcularMRP);$('politica').addEventListener('change',updatePolicyUI);$('eoqD').addEventListener('input',actualizarEOQ);$('eoqS').addEventListener('input',actualizarEOQ);$('eoqH').addEventListener('input',actualizarEOQ);$('productoFinal').addEventListener('input',renderTree);$('periodos').addEventListener('change',renderDemanda);cargarDemo();
+let items = [];
+let bom = [];
+let demanda = {};
+let ultimoResultado = null;
+
+const $ = id => document.getElementById(id);
+const val = x => { const n = Number(x); return isNaN(n) ? 0 : n; };
+
+function semanas(){ return Math.max(1, Math.min(24, val($("periodos").value || 8))); }
+
+function showView(view){
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
+  $("view-" + view).classList.add("active");
+  document.querySelector('.step[data-view="' + view + '"]').classList.add("active");
+  if(view === "reporte") generarReporte();
+}
+
+function calcularEOQ(){
+  const D = Math.max(1, val($("eoqD").value));
+  const S = Math.max(0.01, val($("eoqS").value));
+  const H = Math.max(0.01, val($("eoqH").value));
+  return Math.ceil(Math.sqrt((2 * D * S) / H));
+}
+
+function updatePolicyUI(){
+  const isEOQ = $("politica").value === "EOQ";
+  $("eoqBox").classList.toggle("hidden", !isEOQ);
+  if(isEOQ) $("eoqResult").textContent = "EOQ calculado: " + calcularEOQ() + " unidades por orden";
+}
+
+function cargarDemo(){
+  $("nombreEjercicio").value = "Ejercicio MRP - Producto A";
+  $("productoFinal").value = "A";
+  $("periodos").value = 8;
+  $("politica").value = "L4L";
+  $("eoqD").value = 1200;
+  $("eoqS").value = 25;
+  $("eoqH").value = 5;
+
+  items = [
+    {codigo:"A", nivel:0, lt:1, inv:10, ss:0, rp:0},
+    {codigo:"B", nivel:1, lt:2, inv:15, ss:0, rp:0},
+    {codigo:"C", nivel:1, lt:1, inv:20, ss:0, rp:0},
+    {codigo:"D", nivel:2, lt:1, inv:10, ss:0, rp:0},
+    {codigo:"E", nivel:2, lt:2, inv:5, ss:0, rp:0},
+    {codigo:"F", nivel:2, lt:3, inv:10, ss:0, rp:0},
+    {codigo:"G", nivel:2, lt:2, inv:0, ss:0, rp:0}
+  ];
+
+  bom = [
+    {padre:"A", comp:"B", qty:2},
+    {padre:"A", comp:"C", qty:3},
+    {padre:"B", comp:"D", qty:2},
+    {padre:"B", comp:"E", qty:2},
+    {padre:"C", comp:"E", qty:2},
+    {padre:"C", comp:"F", qty:2},
+    {padre:"F", comp:"G", qty:1},
+    {padre:"F", comp:"D", qty:2}
+  ];
+
+  demanda = {};
+  for(let t=1;t<=semanas();t++) demanda[t] = 0;
+  demanda[8] = 50;
+
+  ultimoResultado = null;
+  renderAll();
+  updatePolicyUI();
+  $("mrpTables").innerHTML = "";
+  $("summaryCards").innerHTML = "";
+  $("alerts").innerHTML = "";
+  $("reportPage").innerHTML = "";
+}
+
+function renderAll(){ renderItemsCards(); renderBomCards(); renderDemanda(); renderTree(); }
+
+function renderItemsCards(){
+  const box = $("itemsCards");
+  box.innerHTML = "";
+  items.forEach((it,i)=>{
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <div class="item-card-head">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="item-code">${it.codigo || "?"}</div>
+          <div>
+            <div class="item-title">Artículo ${it.codigo || "nuevo"}</div>
+            <div class="item-sub">Nivel ${it.nivel} · LT ${it.lt} semana(s)</div>
+          </div>
+        </div>
+        <button class="btn danger" onclick="deleteItem(${i})">Eliminar</button>
+      </div>
+      <div class="form-grid">
+        <label>Código <input value="${it.codigo}" data-i="${i}" data-k="codigo"></label>
+        <label>Nivel <input type="number" value="${it.nivel}" data-i="${i}" data-k="nivel"></label>
+        <label>Lead time <input type="number" min="0" value="${it.lt}" data-i="${i}" data-k="lt"></label>
+        <label>Inventario <input type="number" value="${it.inv}" data-i="${i}" data-k="inv"></label>
+        <label>Stock seguridad <input type="number" value="${it.ss}" data-i="${i}" data-k="ss"></label>
+        <label>Recepción programada <input type="number" value="${it.rp}" data-i="${i}" data-k="rp"></label>
+      </div>
+    `;
+    box.appendChild(card);
+  });
+
+  box.querySelectorAll("input").forEach(input=>{
+    input.addEventListener("input", e=>{
+      const i = Number(e.target.dataset.i);
+      const k = e.target.dataset.k;
+      items[i][k] = k === "codigo" ? e.target.value.trim().toUpperCase() : val(e.target.value);
+      renderItemsCards();
+      renderTree();
+    });
+  });
+}
+
+function renderBomCards(){
+  const box = $("bomCards");
+  box.innerHTML = "";
+  bom.forEach((r,i)=>{
+    const card = document.createElement("div");
+    card.className = "bom-card";
+    card.innerHTML = `
+      <div class="bom-card-head">
+        <div>
+          <div class="item-title">Relación BOM</div>
+          <div class="item-sub">Componente requerido por unidad del padre</div>
+        </div>
+        <button class="btn danger" onclick="deleteBom(${i})">Eliminar</button>
+      </div>
+      <div class="bom-relation"><span>${r.padre || "?"}</span> → <span>${r.comp || "?"}</span> <small>x${r.qty}</small></div>
+      <div class="form-grid">
+        <label>Padre <input value="${r.padre}" data-i="${i}" data-k="padre"></label>
+        <label>Componente <input value="${r.comp}" data-i="${i}" data-k="comp"></label>
+        <label>Cantidad <input type="number" min="1" value="${r.qty}" data-i="${i}" data-k="qty"></label>
+      </div>
+    `;
+    box.appendChild(card);
+  });
+
+  box.querySelectorAll("input").forEach(input=>{
+    input.addEventListener("input", e=>{
+      const i = Number(e.target.dataset.i);
+      const k = e.target.dataset.k;
+      bom[i][k] = k === "qty" ? Math.max(1,val(e.target.value)) : e.target.value.trim().toUpperCase();
+      renderBomCards();
+      renderTree();
+    });
+  });
+}
+
+function renderDemanda(){
+  const p = semanas();
+  const nueva = {};
+  for(let t=1;t<=p;t++) nueva[t] = demanda[t] || 0;
+  demanda = nueva;
+  const box = $("demandaGrid");
+  box.innerHTML = "";
+  for(let t=1;t<=p;t++){
+    const div = document.createElement("div");
+    div.className = "week-box";
+    div.innerHTML = `<label>Semana ${t}<input type="number" min="0" value="${demanda[t]}" data-week="${t}"></label>`;
+    div.querySelector("input").addEventListener("input", e => demanda[e.target.dataset.week] = val(e.target.value));
+    box.appendChild(div);
+  }
+}
+
+function syncFromCards(){
+  document.querySelectorAll("#itemsCards input").forEach(inp=>{
+    const i = Number(inp.dataset.i), k = inp.dataset.k;
+    if(items[i]) items[i][k] = k === "codigo" ? inp.value.trim().toUpperCase() : val(inp.value);
+  });
+  document.querySelectorAll("#bomCards input").forEach(inp=>{
+    const i = Number(inp.dataset.i), k = inp.dataset.k;
+    if(bom[i]) bom[i][k] = k === "qty" ? Math.max(1,val(inp.value)) : inp.value.trim().toUpperCase();
+  });
+  document.querySelectorAll("#demandaGrid input").forEach(inp=> demanda[inp.dataset.week] = val(inp.value));
+}
+
+function addItem(){ items.push({codigo:"", nivel:0, lt:1, inv:0, ss:0, rp:0}); renderItemsCards(); }
+function deleteItem(i){ const cod=items[i].codigo; items.splice(i,1); bom=bom.filter(r=>r.padre!==cod && r.comp!==cod); renderAll(); }
+function addBom(){ bom.push({padre:"", comp:"", qty:1}); renderBomCards(); renderTree(); }
+function deleteBom(i){ bom.splice(i,1); renderBomCards(); renderTree(); }
+
+function renderTree(){
+  const root = $("productoFinal").value.trim().toUpperCase() || "A";
+  const canvas = $("treeCanvas");
+  function children(code){ return bom.map((r,idx)=>({...r,idx})).filter(r => r.padre === code); }
+  function build(code, edge=null){
+    const childs = children(code);
+    const info = edge ? `<small>Unid.: <input class="qty-edit" type="number" min="1" value="${edge.qty}" data-bom="${edge.idx}"></small>` : `<small>Producto final</small>`;
+    let html = `<li><div class="node">${code}${info}</div>`;
+    if(childs.length){ html += "<ul>"; childs.forEach(ch => html += build(ch.comp, ch)); html += "</ul>"; }
+    html += "</li>";
+    return html;
+  }
+  canvas.innerHTML = `<ul>${build(root)}</ul>`;
+  canvas.querySelectorAll(".qty-edit").forEach(inp=>{
+    inp.addEventListener("input", e=>{
+      const idx = Number(e.target.dataset.bom);
+      bom[idx].qty = Math.max(1,val(e.target.value));
+      renderBomCards();
+    });
+  });
+}
+
+function plannedReceiptQty(netRequirement){
+  if(netRequirement <= 0) return 0;
+  if($("politica").value === "L4L") return netRequirement;
+  const eoq = calcularEOQ();
+  return Math.ceil(netRequirement / eoq) * eoq;
+}
+
+function calcItem(item, gross){
+  const p = semanas();
+  const recProg = Array(p+1).fill(0), disp = Array(p+1).fill(0), netas = Array(p+1).fill(0), recPlan = Array(p+1).fill(0), lanzPlan = Array(p+1).fill(0);
+  for(let t=1;t<=p;t++) recProg[t] = val(item.rp);
+  let inv = val(item.inv);
+  for(let t=1;t<=p;t++){
+    const before = inv + recProg[t];
+    if(before - gross[t] < val(item.ss)){
+      netas[t] = val(item.ss) + gross[t] - before;
+      recPlan[t] = plannedReceiptQty(netas[t]);
+    }
+    inv = inv + recProg[t] + recPlan[t] - gross[t];
+    disp[t] = inv;
+    const launchWeek = t - val(item.lt);
+    if(recPlan[t] > 0 && launchWeek >= 1) lanzPlan[launchWeek] += recPlan[t];
+  }
+  return {gross, recProg, disp, netas, recPlan, lanzPlan};
+}
+
+function calcularMRP(){
+  syncFromCards();
+  const root = $("productoFinal").value.trim().toUpperCase();
+  const itemMap = Object.fromEntries(items.map(i => [i.codigo, i]));
+  if(!root || !itemMap[root]){ alert("El producto final no existe en los artículos."); return; }
+
+  const p = semanas();
+  const grossMap = {};
+  items.forEach(i => grossMap[i.codigo] = Array(p+1).fill(0));
+  for(let t=1;t<=p;t++) grossMap[root][t] = val(demanda[t]);
+
+  const order = [...items].sort((a,b)=>val(a.nivel)-val(b.nivel)).map(i=>i.codigo);
+  const result = {};
+  for(const code of order){
+    if(!grossMap[code]) grossMap[code] = Array(p+1).fill(0);
+    result[code] = calcItem(itemMap[code], grossMap[code]);
+    bom.filter(r => r.padre === code).forEach(r=>{
+      if(!grossMap[r.comp]) grossMap[r.comp] = Array(p+1).fill(0);
+      for(let t=1;t<=p;t++) grossMap[r.comp][t] += result[code].lanzPlan[t] * val(r.qty);
+    });
+  }
+  ultimoResultado = {result, order, itemMap, policy:$("politica").value, eoq:$("politica").value==="EOQ" ? calcularEOQ() : null};
+  renderMRP();
+  generarReporte();
+}
+
+function arrTotal(arr){ let s=0; for(let t=1;t<=semanas();t++) s+=val(arr[t]); return s; }
+function firstWeek(arr){ for(let t=1;t<=semanas();t++) if(val(arr[t])>0) return t; return "-"; }
+function weekHeads(){ return Array.from({length:semanas()},(_,i)=>`<th>S${i+1}</th>`).join(""); }
+function row(name, arr, red=false){ let html=`<tr><td class="${red?'red':''}">${name}</td>`; for(let t=1;t<=semanas();t++) html+=`<td class="${red?'red':''}">${arr[t] ? arr[t] : ""}</td>`; return html+"</tr>"; }
+
+function buildAlerts(data){
+  const alerts = [];
+  data.order.forEach(code=>{
+    const it=data.itemMap[code], r=data.result[code];
+    for(let t=1;t<=semanas();t++){
+      if(r.recPlan[t]>0 && (t-val(it.lt))<1) alerts.push({type:"bad", text:`${code}: necesita recepción en semana ${t}, pero su lead time exige lanzamiento antes del horizonte.`});
+    }
+  });
+  bom.forEach(rel=>{
+    const count=bom.filter(x=>x.comp===rel.comp).length;
+    if(count>1 && !alerts.some(a=>a.text.includes(`componente ${rel.comp}`))) alerts.push({type:"", text:`El componente ${rel.comp} aparece en más de un padre. Se consolidan sus necesidades automáticamente.`});
+  });
+  if(!alerts.length) alerts.push({type:"ok", text:"No se detectaron lanzamientos fuera del horizonte ni conflictos críticos."});
+  return alerts;
+}
+
+function renderMRP(){
+  const data = ultimoResultado;
+  if(!data) return;
+  const totalNet = data.order.reduce((s,c)=>s+arrTotal(data.result[c].netas),0);
+  const totalOrders = data.order.reduce((s,c)=>s+arrTotal(data.result[c].recPlan),0);
+  const totalLaunch = data.order.reduce((s,c)=>s+arrTotal(data.result[c].lanzPlan),0);
+  const itemsWithOrders = data.order.filter(c=>arrTotal(data.result[c].recPlan)>0).length;
+  $("summaryCards").innerHTML = `
+    <div class="metric"><span>Necesidad neta total</span><strong>${totalNet}</strong></div>
+    <div class="metric"><span>Recepción planificada total</span><strong>${totalOrders}</strong></div>
+    <div class="metric"><span>Lanzamientos planificados</span><strong>${totalLaunch}</strong></div>
+    <div class="metric"><span>Artículos con orden</span><strong>${itemsWithOrders}</strong></div>`;
+  $("alerts").innerHTML = buildAlerts(data).map(a=>`<div class="alert ${a.type}">${a.text}</div>`).join("");
+
+  let html = "";
+  data.order.forEach(code=>{
+    const it=data.itemMap[code], r=data.result[code];
+    html += `
+      <div class="mrp-card">
+        <div class="mrp-title">
+          <div>Artículo: ${code}</div><div>Nivel: ${it.nivel}</div><div>Lead time: ${it.lt}</div>
+          <div>Inv.: ${it.inv}</div><div>SS: ${it.ss}</div><div>Política: ${data.policy}${data.eoq ? " / EOQ " + data.eoq : ""}</div>
+        </div>
+        <div class="table-wrap">
+          <table class="mrp-table">
+            <thead><tr><th>Conceptos</th>${weekHeads()}</tr></thead>
+            <tbody>
+              ${row("NECESIDADES BRUTAS", r.gross)}
+              ${row("RECEPCIONES PROGRAMADAS", r.recProg)}
+              ${row("DISPONIBLE (INVENTARIOS)", r.disp)}
+              ${row("NECESIDADES NETAS", r.netas, true)}
+              ${row("RECEPCIONES DE ORDEN PLANIFICADO", r.recPlan)}
+              ${row("LANZAMIENTO DEL ORDEN PLANIFICADO", r.lanzPlan)}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  });
+  $("mrpTables").innerHTML = html;
+}
+
+function generarReporte(){
+  if(!ultimoResultado){
+    $("reportPage").innerHTML = `<div class="report-header"><div><h2>Reporte MRP</h2><p>Presiona “Calcular MRP” para generar el reporte.</p></div><div class="report-tag">Pendiente</div></div>`;
+    return;
+  }
+  const data=ultimoResultado, root=$("productoFinal").value.trim().toUpperCase();
+  const totalNet=data.order.reduce((s,c)=>s+arrTotal(data.result[c].netas),0);
+  const totalOrders=data.order.reduce((s,c)=>s+arrTotal(data.result[c].recPlan),0);
+  const starts=data.order.map(c=>firstWeek(data.result[c].lanzPlan)).filter(x=>x!=="-");
+  const firstLaunch=starts.length ? Math.min(...starts) : "-";
+  const policyName=data.policy==="L4L" ? "Lote por lote" : `EOQ (${data.eoq} unidades)`;
+  const today=new Date().toLocaleDateString("es-EC");
+  const rows=data.order.map(code=>{
+    const r=data.result[code];
+    return `<tr><td>${code}</td><td>${arrTotal(r.gross)}</td><td>${arrTotal(r.netas)}</td><td>${arrTotal(r.recPlan)}</td><td>${firstWeek(r.lanzPlan)}</td><td>${r.disp[semanas()]}</td></tr>`;
+  }).join("");
+  const alerts=buildAlerts(data).slice(0,5).map(a=>`<li>${a.text}</li>`).join("");
+  $("reportPage").innerHTML = `
+    <div class="report-header">
+      <div><h2>Reporte ejecutivo MRP</h2><p><strong>${$("nombreEjercicio").value}</strong></p><p>Fecha de emisión: ${today}</p></div>
+      <div class="report-tag">${policyName}</div>
+    </div>
+    <div class="report-grid">
+      <div class="report-box"><span>Producto final</span><strong>${root}</strong></div>
+      <div class="report-box"><span>Horizonte</span><strong>${semanas()} semanas</strong></div>
+      <div class="report-box"><span>Necesidad neta total</span><strong>${totalNet}</strong></div>
+      <div class="report-box"><span>Recepción planificada total</span><strong>${totalOrders}</strong></div>
+      <div class="report-box"><span>Primera semana de lanzamiento</span><strong>${firstLaunch}</strong></div>
+      <div class="report-box"><span>Artículos evaluados</span><strong>${data.order.length}</strong></div>
+    </div>
+    <div class="report-section"><h3>Conclusión operativa</h3><p>Bajo la política <strong>${policyName}</strong>, el sistema determina las órdenes necesarias para cubrir la demanda del producto <strong>${root}</strong>.</p></div>
+    <div class="report-section"><h3>Resumen por artículo</h3><table class="report-table"><thead><tr><th>Artículo</th><th>Nec. brutas</th><th>Nec. netas</th><th>Rec. planificadas</th><th>Primera orden</th><th>Inv. final</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="report-section"><h3>Alertas y observaciones</h3><ul>${alerts}</ul></div>
+    <div class="report-section"><h3>Recomendación</h3><p>Validar inventarios físicos antes de liberar órdenes, confirmar lead times y revisar componentes compartidos para evitar duplicidad de pedidos.</p></div>
+    <div class="report-sign"><div class="sign-line">Elaborado por</div><div class="sign-line">Revisado por</div></div>`;
+}
+
+function printReport(){ generarReporte(); showView("reporte"); setTimeout(()=>window.print(),250); }
+
+document.querySelectorAll(".step").forEach(btn=>btn.addEventListener("click",()=>showView(btn.dataset.view)));
+$("btnDemo").addEventListener("click", cargarDemo);
+$("btnPrintTop").addEventListener("click", printReport);
+$("btnPrint").addEventListener("click", printReport);
+$("btnGenerarReporte").addEventListener("click", generarReporte);
+$("btnAddItem").addEventListener("click", addItem);
+$("btnAddBom").addEventListener("click", addBom);
+$("btnActualizarSemanas").addEventListener("click", renderDemanda);
+$("btnCalcular").addEventListener("click", calcularMRP);
+$("politica").addEventListener("change", updatePolicyUI);
+$("eoqD").addEventListener("input", updatePolicyUI);
+$("eoqS").addEventListener("input", updatePolicyUI);
+$("eoqH").addEventListener("input", updatePolicyUI);
+$("productoFinal").addEventListener("input", renderTree);
+$("periodos").addEventListener("change", renderDemanda);
+
+cargarDemo();

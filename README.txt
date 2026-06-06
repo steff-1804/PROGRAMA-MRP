@@ -1,16 +1,15 @@
-# Programa MRP - Ejercicios de clase
+PROGRAMA MRP - VERSIÓN CON TARJETAS
 
-## Cómo usar
-1. Abrir `index.html` en el navegador.
-2. Presionar `Cargar ejemplo de clase`.
-3. Modificar semanas, demanda, inventario, lead time o estructura BOM.
-4. Presionar `Calcular MRP`.
-5. Usar `Exportar a Excel` para descargar el resultado.
+Mejora aplicada:
+- La sección de artículos ya no se ve como tabla.
+- Los artículos se ingresan como tarjetas editables.
+- La sección BOM también usa tarjetas.
+- La salida MRP conserva tablas porque el análisis semanal requiere estructura tabular.
+- Responsive para celular.
+- Reporte ejecutivo para imprimir o guardar como PDF.
 
-## Archivos
-- `index.html`: estructura de la página.
-- `style.css`: diseño visual similar al ejercicio de clase.
-- `app.js`: lógica de cálculo MRP.
-
-## Nota técnica
-El cálculo usa política lote por lote (L4L). Las necesidades brutas de los componentes se generan desde el lanzamiento del orden planificado del padre, que es el procedimiento correcto en MRP.
+Render:
+- Static Site
+- Root Directory: vacío si index.html está en raíz
+- Build Command: vacío
+- Publish Directory: .
