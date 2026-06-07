@@ -1,13 +1,9 @@
-MRP Planner - diseño tipo dashboard educativo
+PROGRAMA MRP - DISEÑO UPS SIN LOGO EXTERNO
 
-Archivos:
-- index.html
-- style.css
-- app.js
+Esta versión NO necesita subir carpeta assets ni logo por separado.
+El logo está incrustado dentro de index.html en formato base64.
 
-No requiere carpeta assets porque el logo está incrustado dentro del index.html.
-
-Subir a GitHub:
+Subir a GitHub solamente:
 - index.html
 - style.css
 - app.js
