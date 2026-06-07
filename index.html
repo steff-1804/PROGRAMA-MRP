@@ -123,6 +123,7 @@
 
             <label>Semanas
               <input id="periodos" type="number" min="1" max="24" value="8">
+              <small class="field-help">Al cambiar este número se generan las casillas de demanda.</small>
             </label>
 
             <label>Política
@@ -248,10 +249,20 @@
             <div class="icon-box">📈</div>
             <div>
               <h2>Demanda por semana</h2>
-              <p>Ingresa la demanda independiente del producto final.</p>
+              <p>Primero ingresa el número de semanas. El sistema desplegará automáticamente una casilla por cada semana.</p>
             </div>
           </div>
-          <button id="btnActualizarSemanas" class="btn secondary">Actualizar semanas</button>
+        </div>
+
+        <div class="weeks-control">
+          <label>Número de semanas a planificar
+            <input id="periodosDemanda" type="number" min="1" max="24" value="8">
+          </label>
+          <button id="btnActualizarSemanas" class="btn secondary">Generar semanas</button>
+        </div>
+
+        <div class="demand-info" id="demandInfo">
+          Se generarán 8 casillas para ingresar la demanda semanal del producto final.
         </div>
 
         <div id="demandaGrid" class="week-grid"></div>

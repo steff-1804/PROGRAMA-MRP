@@ -1,9 +1,12 @@
-PROGRAMA MRP - DISEÑO UPS SIN LOGO EXTERNO
+PROGRAMA MRP - SEMANAS DINÁMICAS
 
-Esta versión NO necesita subir carpeta assets ni logo por separado.
-El logo está incrustado dentro de index.html en formato base64.
+Cambio aplicado:
+- Ahora se puede ingresar el número de semanas.
+- Según ese número, la sección Demanda despliega automáticamente una casilla por cada semana.
+- El campo de semanas de Datos generales y el campo de Demanda quedan sincronizados.
+- No requiere logo externo.
 
-Subir a GitHub solamente:
+Subir a GitHub:
 - index.html
 - style.css
 - app.js

@@ -1219,3 +1219,64 @@ td{
     padding:18mm;
   }
 }
+
+
+/* Control dinámico de semanas */
+.field-help{
+  display:block;
+  margin-top:4px;
+  color:#667085;
+  font-size:12px;
+  font-weight:500;
+}
+
+.weeks-control{
+  display:grid;
+  grid-template-columns:minmax(220px, 320px) auto;
+  gap:12px;
+  align-items:end;
+  margin:14px 0 12px;
+  padding:14px;
+  border:1px solid #dbe5f0;
+  border-radius:16px;
+  background:#f8fbff;
+}
+
+.weeks-control label{
+  margin:0;
+}
+
+.demand-info{
+  color:#344054;
+  background:#fff8dc;
+  border-left:5px solid #f5b700;
+  border-radius:12px;
+  padding:10px 12px;
+  margin-bottom:14px;
+  font-size:14px;
+}
+
+.week-box{
+  position:relative;
+}
+
+.week-box::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:4px;
+  background:#003b70;
+  border-radius:16px 16px 0 0;
+}
+
+.week-box label{
+  margin:0;
+}
+
+@media(max-width:760px){
+  .weeks-control{
+    grid-template-columns:1fr;
+  }
+}

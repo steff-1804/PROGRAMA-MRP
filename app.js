@@ -11,7 +11,30 @@ const val = x => {
 };
 
 function semanas(){
-  return Math.max(1, Math.min(24, val($("periodos").value || 8)));
+  const inputPrincipal = $("periodos");
+  const valor = inputPrincipal ? inputPrincipal.value : 8;
+  return Math.max(1, Math.min(24, val(valor || 8)));
+}
+
+function sincronizarCamposSemanas(origen){
+  const principal = $("periodos");
+  const demandaInput = $("periodosDemanda");
+
+  let valor = origen && origen.value ? origen.value : (principal ? principal.value : 8);
+  valor = Math.max(1, Math.min(24, val(valor || 8)));
+
+  if(principal) principal.value = valor;
+  if(demandaInput) demandaInput.value = valor;
+
+  return valor;
+}
+
+function actualizarTextoDemanda(){
+  const info = $("demandInfo");
+  if(info){
+    const p = semanas();
+    info.textContent = `Se generarán ${p} casilla${p === 1 ? "" : "s"} para ingresar la demanda semanal del producto final.`;
+  }
 }
 
 function updateHero(){
@@ -106,6 +129,7 @@ function cargarDemo(){
   $("nombreEjercicio").value = "Ejercicio MRP - Producto A";
   $("productoFinal").value = "A";
   $("periodos").value = 8;
+  if($("periodosDemanda")) $("periodosDemanda").value = 8;
   $("politica").value = "L4L";
   $("eoqD").value = 1200;
   $("eoqS").value = 25;
@@ -291,6 +315,7 @@ function renderBomCards(){
 }
 
 function renderDemanda(){
+  sincronizarCamposSemanas();
   const p = semanas();
   const nueva = {};
 
@@ -309,7 +334,7 @@ function renderDemanda(){
 
     div.innerHTML = `
       <label>Semana ${t}
-        <input type="number" min="0" value="${demanda[t]}" data-week="${t}">
+        <input type="number" min="0" value="${demanda[t]}" data-week="${t}" placeholder="Demanda S${t}">
       </label>
     `;
 
@@ -320,6 +345,7 @@ function renderDemanda(){
     box.appendChild(div);
   }
 
+  actualizarTextoDemanda();
   updateHero();
 }
 
@@ -814,6 +840,15 @@ $("eoqD").addEventListener("input", updatePolicyUI);
 $("eoqS").addEventListener("input", updatePolicyUI);
 $("eoqH").addEventListener("input", updatePolicyUI);
 $("productoFinal").addEventListener("input", renderTree);
-$("periodos").addEventListener("change", renderDemanda);
+$("periodos").addEventListener("input", e => {
+  sincronizarCamposSemanas(e.target);
+  renderDemanda();
+});
+if($("periodosDemanda")){
+  $("periodosDemanda").addEventListener("input", e => {
+    sincronizarCamposSemanas(e.target);
+    renderDemanda();
+  });
+}
 
 cargarDemo();
